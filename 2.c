@@ -111,10 +111,10 @@ bool isValid(char* numStr) {
 }
 
 
-WILO: resolved: issue was that arr[n] gives you n characters.
-if you then plan on using all of those chars for firstHalf, then
-you have no null character. 
-i.e. firstHalf needs to be length/2 + 1, and ditto for the memset.
+// WILO: resolved: issue was that arr[n] gives you n characters.
+// if you then plan on using all of those chars for firstHalf, then
+// you have no null character. 
+// i.e. firstHalf needs to be length/2 + 1, and ditto for the memset.
 
 
 int main() {
