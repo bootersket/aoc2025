@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <math.h>
+#include <limits.h>
 
 /* Helper function to print where null
  * characters are in a string */
@@ -18,14 +20,14 @@ void printHardcore(char* str, int length) {
  * "1-2"     -> start=1    end=2
  * "345-499" -> start=345  end=499
  * */
-void parseRange(char* str, int* start, int* end) {
+void parseRange(char* str, long* start, long* end) {
   // printf("\nparseRange():\n");
   // printf("parseRange str: '%s'\n", str);
   char* ptr;
   ptr = strtok(str, "-");
   while (ptr != NULL) {
-    if (*start == -1) *start = atoi(ptr);
-    else if (*end == -1) *end = atoi(ptr);
+    if (*start == -1) *start = atol(ptr);
+    else if (*end == -1) *end = atol(ptr);
     ptr = strtok(NULL, "-");
   }
   // printf("start=%d  end=%d\n", *start, *end);
@@ -33,8 +35,8 @@ void parseRange(char* str, int* start, int* end) {
 }
 
 typedef struct {
-  int start;
-  int end;
+  long start;
+  long end;
 } ProductIDRange;
 
 int getProductIDRangeCount(char* databaseStr) {
@@ -74,66 +76,87 @@ ProductIDRange* parseDatabaseStr(char* databaseStr) {
   /*---------------------
      PARSE SUBSTRINGS
   ---------------------*/
-  int start, end;
+  long start, end;
   ProductIDRange* pirs = malloc(substringIdx * sizeof(ProductIDRange));
+  printf("substringIdx: %d\n", substringIdx);
   for (int i=0; i<substringIdx; i++) {
     pirs[i].start = -1;
     pirs[i].end = -1;
     parseRange(substrings[i], &pirs[i].start, &pirs[i].end);
+    printf("pirs[i].start= %ld\n", pirs[i].start);
+    printf("pirs[i].end= %ld\n", pirs[i].end);
   }
 
   return pirs;
 }
 
 void printPIR(ProductIDRange pir) {
-  printf("start=%d  end=%d\n", pir.start, pir.end);
+  printf("start=%ld  end=%ld\n", pir.start, pir.end);
 }
 
 bool isValid(char* numStr) {
-  printf("\nnumStr: %s\n", numStr);
   int length = strlen(numStr);
   if (length % 2 != 0) return true;
 
-  printf("length/2 = %d\n", length/2);
-  // char firstHalf[length/2];
-  // char firstHalf[2];
-  // char secondHalf[length/2];
-  // memset(firstHalf, 0, sizeof(char)*length/2);
-  char* firstHalf = calloc(length, sizeof(char));
+  char* p1 = numStr;
+  char* p2 = numStr + length/2;
 
-  int firstHalfIndex = 0;
-
-  for (int i=0; i<length/2; i++) {
-    firstHalf[firstHalfIndex++] = numStr[i];
+  while (*p2 != '\0') {
+    if (*p1 != *p2) return true;
+    p1++;
+    p2++;
   }
-  printf("firstHalf: '%s'\n", firstHalf);
+  return false;
+}
 
+char* numToStr(long num) {
+  /* Count number of digits */ 
+  int numOfDigits = ceil(log10(num+1));
+  char* s = calloc(numOfDigits, sizeof(char));
+  sprintf(s, "%ld", num);
+  return s;
+}
+
+void checkRange(ProductIDRange pir, long long* invalidSum) {
+  printf("checkRange\n");
+  printf("pir.start=%ld  pir.end=%ld\n", pir.start, pir.end);
+  for (long i=pir.start; i<=pir.end; i++) {
+    // printf("i=%ld\n", i);
+    char* numStr = numToStr(i);
+    if (!isValid(numStr)) *invalidSum += i;
+  }
 }
 
 
-// WILO: resolved: issue was that arr[n] gives you n characters.
-// if you then plan on using all of those chars for firstHalf, then
-// you have no null character. 
-// i.e. firstHalf needs to be length/2 + 1, and ditto for the memset.
 
 
 int main() {
-  // char str[] = "1-2,3-4,5-6";
-  // int pirCount = getProductIDRangeCount(str);
-  // ProductIDRange* pirs = parseDatabaseStr(str);
-  // for (int i=0; i<pirCount; i++) {
-  //   printPIR(pirs[i]);
-  // }
-
-  // printf("%s -> %s\n", "123", isValid("123") ? "valid" : "invalid");
-  // printf("%s -> %s\n", "1", isValid("1") ? "valid" : "invalid");
-  // printf("%s -> %s\n", "11", isValid("11") ? "valid" : "invalid");
-  printf("%s -> %s\n", "4545", isValid("4545") ? "valid" : "invalid");
-  // printf("%s -> %s\n", "1188511885", isValid("1188511885") ? "valid" : "invalid");
-  // printf("%s -> %s\n", "446446", isValid("446446") ? "valid" : "invalid");
+  printf("LONG_MAX = %ld\n", LONG_MAX);
+  FILE* file = fopen("input/2/long.txt", "r");
+  if (!file) {
+    printf("Failed to open file\n");
+    return -1;
+  }
+  char line[4096];
+  fgets(line, sizeof(line), file);
+  // printf("%s", line);
 
 
+
+
+
+  int pirCount = getProductIDRangeCount(line);
+  ProductIDRange* pirs = parseDatabaseStr(line);
+  long long invalidSum = 0;
+  for (int i=0; i<pirCount; i++) {
+    printf("main loop i=%d\n", i);
+    checkRange(pirs[i], &invalidSum);
+  }
+  printf("%lld\n", invalidSum);
 
   return 0;
 
 }
+/*
+999,999,999,999 is too high
+ * */

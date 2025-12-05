@@ -6,7 +6,7 @@ run: $(n)
 
 # Build executable from n.c
 $(n) : $(n).c
-	$(CC) -o build/$@ $<
+	$(CC) -o build/$@ $< -lm
 
 
 .PHONY: run
